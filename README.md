@@ -28,18 +28,6 @@
 
 <hr />
 
-## Install
-
-```sh
-pip install kiss-icp
-```
-
-Next, follow the instructions on how to run the system by typing:
-
-```sh
-kiss_icp_pipeline --help
-```
-
 <details>
 <summary>This should print the following help message:</summary>
 
@@ -59,17 +47,6 @@ cd ~/ros2_ws/src/ && git clone https://github.com/PRBonn/kiss-icp && cd ~/ros2_w
 ```
 For more detailed instructions on the ROS wrapper, please visit this [README](ros/README.md)
 
-</details>
-
-<details>
-<summary>ROS 1</summary>
-
-⚠️ ⚠️ **ROS 1 is deprecated in KISS-ICP and is not officially supported anymore. Upgrade now to ROS 2!** ⚠️ ⚠️
-
-The last release that supports ROS 1 is [v0.3.0](https://github.com/PRBonn/kiss-icp/tree/v0.3.0), if you still need ROS 1 support please check that version.
-
-</details>
-
 
 ## Citation
 
@@ -88,11 +65,3 @@ If you use this library for any academic work, please cite our original [paper](
   codeurl   = {https://github.com/PRBonn/kiss-icp},
 }
 ```
-
-## Contributing
-
-We envision KISS-ICP as a community-driven project, we love to see how the project is growing thanks to the contributions from the community. We would love to see your face in the list below, just open a Pull Request!
-
-<a href="https://github.com/PRBonn/kiss-icp/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=PRBonn/kiss-icp" />
-</a>
