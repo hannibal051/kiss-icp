@@ -36,9 +36,9 @@
 ```sh
 cd ~/ros2_ws/src/ && git clone https://github.com/PRBonn/kiss-icp && cd ~/ros2_ws/ && colcon build --packages-select kiss_icp
 ```
-</details>
-For more detailed instructions on the ROS wrapper, please visit this [this README](ros/README.md)
 
+For more detailed instructions on the ROS wrapper, please visit this [ROS README](ros/README.md)
+</details>
 
 ## Python Support
 <details>
@@ -46,7 +46,7 @@ For more detailed instructions on the ROS wrapper, please visit this [this READM
 
 ![out](https://user-images.githubusercontent.com/21349875/193282970-25a400aa-ebcd-487a-b839-faa04eeca5b9.png)
 
-For advanced instructions on the Python package please see [this README](python/README.md)
+For advanced instructions on the Python package please see [Python README](python/README.md)
 </details>
 
 ## Citation
