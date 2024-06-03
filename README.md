@@ -29,15 +29,6 @@
 
 <hr />
 
-<details>
-<summary>This should print the following help message:</summary>
-
-![out](https://user-images.githubusercontent.com/21349875/193282970-25a400aa-ebcd-487a-b839-faa04eeca5b9.png)
-
-</details>
-
-For advanced instructions on the Python package please see [this README](python/README.md)
-
 ## <span style="color:Tomato">ROS support</span>
 <details>
 <summary>ROS 2</summary>
@@ -45,7 +36,17 @@ For advanced instructions on the Python package please see [this README](python/
 ```sh
 cd ~/ros2_ws/src/ && git clone https://github.com/PRBonn/kiss-icp && cd ~/ros2_ws/ && colcon build --packages-select kiss_icp
 ```
+</details>
 For more detailed instructions on the ROS wrapper, please visit this [README](ros/README.md)
+
+
+## Python Support
+<details>
+<summary>This should print the following help message:</summary>
+
+![out](https://user-images.githubusercontent.com/21349875/193282970-25a400aa-ebcd-487a-b839-faa04eeca5b9.png)
+
+For advanced instructions on the Python package please see [this README](python/README.md)
 </details>
 
 ## Citation
