@@ -1,4 +1,4 @@
-# KISS-ICP ROS 2 Wrapper
+# KISS-ICP ROS 2 Wrapper with GPS-IMU ESKF Estimator
 
 ### How to build
 

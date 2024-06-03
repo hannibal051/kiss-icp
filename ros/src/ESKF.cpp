@@ -429,7 +429,7 @@ bool ESKFNode::healthyGps(std::vector<Vector3d> & msg_buff, const sensor_msgs::m
     // TODO: consider delta-timestamps
     else if ( sizeOf == 2 ) {
         double dis = (msg_buff[1] - msg_buff[0]).norm();
-        if ( dis > 2.0 ) {
+        if ( dis > 8.0 ) {
             return false;
         }
     }
@@ -439,7 +439,7 @@ bool ESKFNode::healthyGps(std::vector<Vector3d> & msg_buff, const sensor_msgs::m
 
         msg_buff.erase(msg_buff.begin());
 
-        if ( dis > 2.0 || dis_mid > 2.0 ) {
+        if ( dis > 8.0 || dis_mid > 8.0 ) {
             return false;
         }
     }
