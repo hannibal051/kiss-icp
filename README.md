@@ -38,8 +38,7 @@
 
 For advanced instructions on the Python package please see [this README](python/README.md)
 
-## ROS support
-
+## <span style="color:Tomato">ROS support</span>
 <details>
 <summary>ROS 2</summary>
 
