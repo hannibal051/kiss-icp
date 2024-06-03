@@ -12,19 +12,19 @@ source install/setup.bash
 
 ### How to run
 
-# LIO(ICP, IMU-Preintegration, iSAM) + INS(ESKF)
+##### LIO(ICP, IMU-Preintegration, iSAM) + INS(ESKF)
 
 ```sh
 ros2 launch kiss_icp odometry_lio_ins.launch.py
 ```
 
-# LIO
+##### LIO
 
 ```sh
 ros2 launch kiss_icp odometry_lio.launch.py
 ```
 
-# LO(ICP)
+##### LO(ICP)
 
 ```sh
 ros2 launch kiss_icp odometry_lo.launch.py
