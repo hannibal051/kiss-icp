@@ -4,12 +4,11 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /point_clouds1/global_map1
-        - /odometry1
         - /odometry1/odometry1/Shape1
         - /odometry1/imu_incremental1/Shape1
         - /odometry1/ekf-earth1/Shape1
-        - /odometry1/eskf1
         - /odometry1/eskf1/Shape1
       Splitter Ratio: 0.5
     Tree Height: 787
@@ -278,7 +277,7 @@ Visualization Manager:
           Shape:
             Alpha: 1
             Axes Length: 40
-            Axes Radius: 0.10000000149011612
+            Axes Radius: 0.20000000298023224
             Color: 255; 25; 0
             Head Length: 0.30000001192092896
             Head Radius: 0.10000000149011612
@@ -316,8 +315,8 @@ Visualization Manager:
           Position Tolerance: 0.10000000149011612
           Shape:
             Alpha: 1
-            Axes Length: 20
-            Axes Radius: 0.30000001192092896
+            Axes Length: 40
+            Axes Radius: 0.20000000298023224
             Color: 255; 25; 0
             Head Length: 0.30000001192092896
             Head Radius: 0.10000000149011612
@@ -339,12 +338,12 @@ Visualization Manager:
       Length: 150
       Name: odom_frame
       Radius: 5
-      Reference Frame: odom
+      Reference Frame: <Fixed Frame>
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: odom
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -387,25 +386,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 931.553955078125
+      Distance: 1430.51513671875
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -300.8741455078125
-        Y: -768.4834594726562
-        Z: -208.73007202148438
+        X: -117.18344116210938
+        Y: -241.50119018554688
+        Z: -354.2102966308594
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.8447973132133484
+      Pitch: 1.3797966241836548
       Target Frame: luminar_front
       Value: Orbit (rviz_default_plugins)
-      Yaw: 3.0403809547424316
+      Yaw: 2.235377311706543
     Saved: ~
 Window Geometry:
   Displays:

@@ -70,12 +70,21 @@ public:
         Q_.block<3, 3>(6, 6) = Matrix3d::Identity() * pow(0.087266, 2) * 800;   // Orientation process noise
         Q_.block<3, 3>(9, 9) = Matrix3d::Identity() * pow(9.81e-5, 2);          // Gyro bias process noise
         Q_.block<3, 3>(12, 12) = Matrix3d::Identity() * pow(0.017453, 2);       // Accel bias process noise
+
+        // IMU noise covariance
+        Qi_ = MatrixXd::Zero(12, 12);
+        Qi_.block<3, 3>(0, 0) = Eigen::Matrix3d::Identity() * 1e-2;
+        Qi_.block<3, 3>(3, 3) = Eigen::Matrix3d::Identity() * 1e-4;
+        Qi_.block<3, 3>(6, 6) = Eigen::Matrix3d::Identity() * 1e-6;
+        Qi_.block<3, 3>(9, 9) = Eigen::Matrix3d::Identity() * 1e-8;
+
         // Measurement noise covariance
         R_ = Matrix3d::Identity() * 0.01 * 0.01;
+        R_yaw = MatrixXd::Identity(1, 1) * 0.01 * 0.01;
 
         // Initialize transformations from GPS antennas to base_link
-        gps_front_to_base_link_ = Vector3d(1.606, 0.05, -0.1428);
-        gps_rear_to_base_link_ = Vector3d(1.606, -0.05, -0.1428);
+        gps_front_to_base_link_ = Vector3d(+1.606, +0.05, -0.1428);
+        gps_rear_to_base_link_ = Vector3d(+1.606, -0.05, -0.1428);
     }
 
 private:
@@ -91,15 +100,13 @@ private:
     State applyErrorState(const State& nominal, const ErrorState& error);
 
     ErrorState integrateIMU(const State& nominal, const Vector3d& accel, const Vector3d& gyro, double dt);
-    MatrixXd computeStateTransitionMatrix(const State& nominal, const Vector3d& accel, const Vector3d& gyro, double dt);
-    MatrixXd computeProcessNoiseJacobian(const State& nominal, const Vector3d& accel, const Vector3d& gyro, double dt);
     Matrix3d skewSymmetric(const Vector3d& v);
 
     Vector3d gpsToENU(double latitude, double longitude, double altitude, double lat_stdev = 5., double lon_stdev = 5., double alt_stdev = 5.);
 
     inline void transformGPSPositionToBaseLink(Vector3d& gps_position, const Vector3d& gps_to_base_link, const Quaterniond& orientation) {
         Vector3d transformed_vector = orientation * gps_to_base_link;
-        gps_position += transformed_vector;
+        gps_position -= transformed_vector;
     }
 
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
@@ -109,8 +116,7 @@ private:
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 
     State nominal_state_;
-    MatrixXd P_;
-    MatrixXd Q_;
+    MatrixXd P_, Q_, Qi_, R_yaw;
     Matrix3d R_;
     double last_imu_time_ = -1;
     rclcpp::Time msg_time_;
