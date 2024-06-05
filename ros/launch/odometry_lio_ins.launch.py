@@ -56,20 +56,21 @@ def generate_launch_description():
         [
             # ROS 2 parameters
             DeclareLaunchArgument("pc_topic", default_value="/ouster/points"),
-            DeclareLaunchArgument("gps_topic", default_value="/ekf/odometry_earth"),
+            DeclareLaunchArgument("gps_topic", default_value="/eskf/odom"),
             DeclareLaunchArgument("bagfile", default_value=""),
             DeclareLaunchArgument("visualize", default_value="true"),
-            DeclareLaunchArgument("odom_frame", default_value="odom"),
-            DeclareLaunchArgument("base_frame", default_value=""),
+            DeclareLaunchArgument("odom_frame", default_value="map"),
+            DeclareLaunchArgument("base_frame", default_value="base_link"),
             DeclareLaunchArgument("publish_odom_tf", default_value="true"),
             # KISS-ICP parameters
             DeclareLaunchArgument("deskew", default_value="true"),
             DeclareLaunchArgument("max_range", default_value="100.0"),
             DeclareLaunchArgument("min_range", default_value="1.0"),
             # GNSS re-relocalization parameters
+            DeclareLaunchArgument("origin_set", default_value="false"),
             DeclareLaunchArgument("origin_lat", default_value="0.0"),
             DeclareLaunchArgument("origin_lon", default_value="0.0"),
-            DeclareLaunchArgument("origin_yaw", default_value="0.0"),
+            DeclareLaunchArgument("origin_alt", default_value="0.0"),
 
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(included_imu_file_path)
@@ -94,10 +95,6 @@ def generate_launch_description():
                         "min_motion_th": 0.1,
                         "publish_odom_tf": LaunchConfiguration("publish_odom_tf"),
                         "visualize": LaunchConfiguration("visualize"),
-                        # GNSS re-relocalization parameters
-                        "origin_lat": LaunchConfiguration("origin_lat"),
-                        "origin_lon": LaunchConfiguration("origin_lon"),
-                        "origin_yaw": LaunchConfiguration("origin_yaw")
                     }
                 ],
             ),
@@ -106,10 +103,23 @@ def generate_launch_description():
                 executable="ins_node",
                 name="ins_node",
                 output="screen",
-                remappings=[("/imu/data", "/vehicle_8/novatel_top/rawimux"),
-                            ("/gps/front/fix", "/vehicle_8/novatel_top/fix"),
-                            ("/gps/rear/fix", "/vehicle_8/novatel_bottom/fix"),
-                            ("/ins/odometry", "/vehicle_8/local_odometry")],
+                parameters=[
+                    {
+                        "odom_frame": LaunchConfiguration("odom_frame"),
+                        "base_frame": LaunchConfiguration("base_frame"),
+                        # GNSS re-relocalization parameters
+                        "origin_set": LaunchConfiguration("origin_set"),
+                        "origin_lat": LaunchConfiguration("origin_lat"),
+                        "origin_lon": LaunchConfiguration("origin_lon"),
+                        "origin_alt": LaunchConfiguration("origin_alt"),
+                    }
+                ],
+                # At least one /fix data (sensor_msgs/msg/nav_sat_fix)
+                # More data more robust
+                remappings=[("/imu/data", "/vehicle_6/novatel_top_id0_imu"), ## /vehicle_8/novatel_top/rawimux
+                            ("/gps/front/fix", "/vehicle_6/novatel_top_id0_gps"),   ## /vehicle_8/novatel_top/fix
+                            ("/gps/rear/fix", "/vehicle_6/novatel_btm_id0_gps"), ## /vehicle_8/novatel_bottom/fix
+                            ("/ins/odometry", "/vehicle_6/local_odometry")], ## /vehicle_8/local_odometry
             ),
             #Node(
             #    package="rviz2",
@@ -118,12 +128,12 @@ def generate_launch_description():
             #    arguments=["-d", PathJoinSubstitution([current_pkg, "rviz", "kiss_icp.rviz"])],
             #    condition=IfCondition(LaunchConfiguration("visualize")),
             #),
-            ExecuteProcess(
-                cmd=["ros2", "bag", "play", LaunchConfiguration("bagfile")],
-                output="screen",
-                condition=IfCondition(
-                    PythonExpression(["'", LaunchConfiguration("bagfile"), "' != ''"])
-                ),
-            ),
+            # ExecuteProcess(
+            #     cmd=["ros2", "bag", "play", LaunchConfiguration("bagfile")],
+            #     output="screen",
+            #     condition=IfCondition(
+            #         PythonExpression(["'", LaunchConfiguration("bagfile"), "' != ''"])
+            #     ),
+            # ),
         ]
     )

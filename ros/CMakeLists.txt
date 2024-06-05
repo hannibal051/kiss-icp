@@ -47,7 +47,6 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
-find_package(novatel_oem7_msgs REQUIRED)
 
 # ROS 2 node -- KISS
 add_library(odometry_component SHARED src/OdometryServer.cpp)
@@ -77,8 +76,7 @@ ament_target_dependencies(
   nav_msgs
   sensor_msgs
   geometry_msgs
-  tf2_ros
-  novatel_oem7_msgs)
+  tf2_ros)
 
 # Register LIO Node
 rclcpp_components_register_node(odometry_component PLUGIN "kiss_icp_ros::OdometryServer" EXECUTABLE odometry_node)

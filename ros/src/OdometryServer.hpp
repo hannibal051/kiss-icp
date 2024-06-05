@@ -99,10 +99,6 @@ private:
     /// Global/map coordinate frame.
     std::string odom_frame_{"odom"};
     std::string base_frame_{};
-
-    double origin_lat_;
-    double origin_lon_;
-    double origin_yaw_;
 };
 
 }  // namespace kiss_icp_ros

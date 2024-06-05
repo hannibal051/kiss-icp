@@ -62,9 +62,6 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     publish_debug_clouds_ = declare_parameter<bool>("visualize", publish_debug_clouds_);
 
     // These params are setup for re-localization
-    origin_lat_ = declare_parameter<double>("origin_lat", origin_lat_);
-    origin_lon_ = declare_parameter<double>("origin_lon", origin_lon_);
-    origin_yaw_ = declare_parameter<double>("origin_yaw", origin_yaw_);
     echo_gps = declare_parameter<bool>("echo_gps", echo_gps);
 
     kiss_icp::pipeline::KISSConfig config;
@@ -235,101 +232,11 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
 }
 
 void OdometryServer::GPSHandler(const nav_msgs::msg::Odometry::ConstSharedPtr &msg) {
-    static bool init_rtk = false;
-    static int init_count = 0;
-    static Sophus::SE2d origin;
+    double cov = std::max(msg->pose.covariance[0], msg->pose.covariance[5]);
 
-    if (!init_rtk)
+    if ( cov <= 0.5 )  // 0.02
     {
-        double cov = std::max(msg->pose.covariance[0], msg->pose.covariance[5]);
-
-        init_count++;
-
-        double map_yaw = quaternionToEulerAngles(msg->pose.pose.orientation.w,
-                                                 msg->pose.pose.orientation.x,
-                                                 msg->pose.pose.orientation.y,
-                                                 msg->pose.pose.orientation.z);
-        double map_x = msg->pose.pose.position.x;
-        double map_y = msg->pose.pose.position.y;
-
-        if (origin_lat_ > 10000)
-        {
-            map_yaw = origin_yaw_;
-            map_x = origin_lon_;
-            map_y = origin_lat_;
-            init_rtk = true;
-        }
-        
-        // Create a rotation matrix from yaw
-        // Sophus::SO2d R(Eigen::Rotation2Dd(map_yaw - 0.5 * M_PI).angle());
-        // Sophus::SO2d R(Eigen::Rotation2Dd(map_yaw + 0.5 * M_PI).angle());
-        Sophus::SO2d R(Eigen::Rotation2Dd(map_yaw).angle());
-        // Create a translation vector
-        Eigen::Vector2d t(map_x, map_y);
-
-        // Create the Sophus SE2 group element
-        Sophus::SE2d cur(R, t);
-        origin = cur.inverse();
-        
-        if ( cov <= 0.02 )
-        {
-            init_rtk = true;
-        }
-        
-        return;
-    }
-    else
-    {  
-        float cov = std::max(msg->pose.covariance[0], msg->pose.covariance[5]);
-
-        float yaw = quaternionToEulerAngles(msg->pose.pose.orientation.w,
-                                            msg->pose.pose.orientation.x,
-                                            msg->pose.pose.orientation.y,
-                                            msg->pose.pose.orientation.z);
-
-        // Create the recent SE2
-        Sophus::SO2d R(Eigen::Rotation2Dd(yaw).angle());
-        Eigen::Vector2d t(msg->pose.pose.position.x, msg->pose.pose.position.y);
-        Sophus::SE2d curSE2(R, t);
-        // get the final result
-        Sophus::SE2d identity = origin * curSE2;
-        // Extract the translation and rotation from the identity transformation
-        Eigen::Vector2d trans = identity.translation();
-        double final_yaw = identity.so2().log();
-
-        // publish gnss odometry msg
-        nav_msgs::msg::Odometry odom_msg;
-        odom_msg.header.stamp = msg->header.stamp;
-        odom_msg.header.frame_id = odom_frame_;
-        odom_msg.pose.covariance[0] = cov;
-        odom_msg.pose.covariance[7] = cov;
-        odom_msg.pose.covariance[14] = cov;
-        odom_msg.pose.pose.position.x = trans(0);
-        odom_msg.pose.pose.position.y = trans(1);
-        odom_msg.pose.pose.position.z = 0.0;
-        Eigen::Matrix3d rotation_matrix;
-        rotation_matrix = Eigen::AngleAxisd(final_yaw, Eigen::Vector3d::UnitZ());
-        Eigen::Quaterniond q = Eigen::Quaterniond(rotation_matrix);
-        odom_msg.pose.pose.orientation.x = q.x();
-        odom_msg.pose.pose.orientation.y = q.y();
-        odom_msg.pose.pose.orientation.z = q.z();
-        odom_msg.pose.pose.orientation.w = q.w();
-        
-        odom_gnss_publisher_->publish(std::move(odom_msg));
-        // std::cout << cov << std::endl;
-        if ( cov <= 0.5 )  // 0.02
-        {
-            nav_msgs::msg::Odometry pose_msg;
-            pose_msg.pose.covariance[0] = cov;
-            pose_msg.pose.covariance[7] = cov;
-            pose_msg.pose.covariance[14] = cov;
-            pose_msg.pose.pose.position.x = trans(0);
-            pose_msg.pose.pose.position.y = trans(1);
-            pose_msg.pose.pose.position.z = final_yaw;
-            pose_msg.header.stamp = msg->header.stamp;
-
-            gpsQueue.push_back(pose_msg);
-        }
+        gpsQueue.push_back(*msg);
     }
 }
 

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -7,7 +9,7 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <nav_msgs/msg/odometry.hpp>
-#include <novatel_oem7_msgs/msg/bestpos.hpp>
+#include "SavitzkyGolay.hpp"
 
 using namespace Eigen;
 
@@ -33,9 +35,13 @@ class ESKFNode : public rclcpp::Node {
 public:
     ESKFNode(const rclcpp::NodeOptions & options) : Node("eskf_node", options) {
         // These params are setup for re-localization
+        gps_initialized_ = declare_parameter<bool>("origin_set", gps_initialized_);
         ORGIN_POINT_LAT = declare_parameter<double>("origin_lat", ORGIN_POINT_LAT);
         ORGIN_POINT_LON = declare_parameter<double>("origin_lon", ORGIN_POINT_LON);
         ORGIN_POINT_ALT = declare_parameter<double>("origin_alt", ORGIN_POINT_ALT);
+
+        base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
+        odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
 
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
             "/imu/data", 800, std::bind(&ESKFNode::imuCallback, this, std::placeholders::_1));
@@ -53,6 +59,8 @@ public:
         nominal_state_.orientation = Quaterniond(1, 0, 0, 0);
         nominal_state_.gyro_bias = Vector3d(0, 0, 0);
         nominal_state_.accel_bias = Vector3d(0, 0, 0);
+        // Initial SG smoother
+        sg_smoother_ = SavitzkyGolay(5, 2);
 
         // Initial error-state covariance
         P_ = MatrixXd::Identity(15, 15); // 15x15 for position, velocity, orientation, gyro_bias, accel_bias
@@ -121,6 +129,8 @@ private:
     double last_imu_time_ = -1;
     rclcpp::Time msg_time_;
 
+    SavitzkyGolay sg_smoother_;
+
     Vector3d gps_front_to_base_link_;
     Vector3d gps_rear_to_base_link_;
 
@@ -136,6 +146,10 @@ private:
     double origin_yaw_;
     double ORGIN_POINT_LON_LENGTH;
     double ORGIN_POINT_LAT_LENGTH;
+
+    /// Global/map coordinate frame.
+    std::string odom_frame_{"odom"};
+    std::string base_frame_{"base_link"};
 };
 
 } // namespace gps_imu_eskf

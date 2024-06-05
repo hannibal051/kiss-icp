@@ -27,7 +27,6 @@ void ESKFNode::imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
     if ( dt <= 0 ) {
         return;
     }
-    last_imu_time_ = imuTime;
     ErrorState error_state = integrateIMU(nominal_state_, accel, gyro, dt);
 
     // Update nominal state with the error state
@@ -49,8 +48,6 @@ void ESKFNode::insOdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
 
     msg_time_ = msg->header.stamp;
 
-    last_imu_time_ = kiss_icp_ros::utils::stamp2Sec(msg_time_);
-
     // Convert quaternion to Euler angles to get the yaw
     Vector3d euler = ins_orientation.toRotationMatrix().eulerAngles(0, 1, 2);
     double ins_yaw = euler.z();
@@ -70,10 +67,12 @@ void ESKFNode::insOdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     MatrixXd S = H * P_ * H.transpose() + R_yaw;
     MatrixXd K = P_ * H.transpose() * S.inverse();
 
+#ifdef TWO_D
     for ( int i = 0; i <= 7; i++ ) {
         K(i) = 0.0;
     }
     K(8) = 1.0;
+#endif
 
     // Update error state with yaw innovation
     VectorXd delta_x = K * yaw_innovation;
@@ -111,8 +110,6 @@ void ESKFNode::gpsFrontCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg
 
     msg_time_ = msg->header.stamp;
 
-    last_imu_time_ = kiss_icp_ros::utils::stamp2Sec(msg_time_);
-
     // GPS measurement update
     Vector3d innovation = gps_position - nominal_state_.position;
 #ifdef TWO_D
@@ -140,9 +137,6 @@ void ESKFNode::gpsFrontCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg
     K(2, 2) = 1.0 - msg->position_covariance[8] * msg->position_covariance[8];
 #endif
 
-    // Update error-state covariance
-    P_ = (MatrixXd::Identity(15, 15) - K * H) * P_;
-
     // Update error state with innovation
     VectorXd delta_x = K * innovation;
     ErrorState correction;
@@ -150,13 +144,14 @@ void ESKFNode::gpsFrontCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg
     correction.delta_velocity = Vector3d::Zero();
     correction.delta_orientation = Vector3d::Zero();
     correction.delta_gyro_bias = Vector3d::Zero();
-    correction.delta_accel_bias = delta_x.segment<3>(9); //Vector3d::Zero();
+    correction.delta_accel_bias = Vector3d::Zero();
 
     // Apply correction to the nominal state
     nominal_state_ = applyErrorState(nominal_state_, correction);
 
-    // Reset the error state to zero after correction
-    P_ = (MatrixXd::Identity(15, 15) - K * H) * P_;
+    // Update error-state covariance
+    const Eigen::MatrixXd I_KH = Eigen::Matrix<double, 15, 15>::Identity() - K * H;
+    P_ = I_KH * P_ * I_KH.transpose() + K * R_ * K.transpose();
 
     // Publish the updated pose
     publishOdometry();
@@ -180,8 +175,6 @@ void ESKFNode::gpsRearCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
 
     msg_time_ = msg->header.stamp;
 
-    last_imu_time_ = kiss_icp_ros::utils::stamp2Sec(msg_time_);
-
     // GPS measurement update
     Vector3d innovation = gps_position - nominal_state_.position;
 #ifdef TWO_D
@@ -209,9 +202,6 @@ void ESKFNode::gpsRearCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
     K(2, 2) = 1.0 - msg->position_covariance[8] * msg->position_covariance[8];
 #endif
 
-    // Update error-state covariance
-    P_ = (MatrixXd::Identity(15, 15) - K * H) * P_;
-
     // Update error state with innovation
     VectorXd delta_x = K * innovation;
     ErrorState correction;
@@ -224,18 +214,25 @@ void ESKFNode::gpsRearCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
     // Apply correction to the nominal state
     nominal_state_ = applyErrorState(nominal_state_, correction);
 
-    // Reset the error state to zero after correction
-    P_ = (MatrixXd::Identity(15, 15) - K * H) * P_;
+    // Update error-state covariance
+    const Eigen::MatrixXd I_KH = Eigen::Matrix<double, 15, 15>::Identity() - K * H;
+    P_ = I_KH * P_ * I_KH.transpose() + K * R_ * K.transpose();
 
     // Publish the updated pose
     publishOdometry();
 }
 
 void ESKFNode::publishOdometry() {
+    // Apply Savitzky-Golay smoothing
+    // Eigen::Vector3d smoothed_position = sg_smoother_.smooth(odometry_positions_);
+    // Eigen::Vector3d smoothed_velocity = sg_smoother_.smooth(odometry_velocities_); 
+
+    last_imu_time_ = kiss_icp_ros::utils::stamp2Sec(msg_time_);
+    
     auto odom_msg = nav_msgs::msg::Odometry();
     odom_msg.header.stamp = msg_time_;
-    odom_msg.header.frame_id = "map";
-    odom_msg.child_frame_id = "base_link";
+    odom_msg.header.frame_id = odom_frame_;
+    odom_msg.child_frame_id = base_frame_;
     odom_msg.pose.pose.position.x = nominal_state_.position.x();
     odom_msg.pose.pose.position.y = nominal_state_.position.y();
     odom_msg.pose.pose.position.z = nominal_state_.position.z();
@@ -247,7 +244,7 @@ void ESKFNode::publishOdometry() {
     odom_msg.twist.twist.linear.y = nominal_state_.velocity.y();
     odom_msg.twist.twist.linear.z = nominal_state_.velocity.z();
 
-    // Fill covariance matrices (placeholders, replace with actual covariance if available)
+    // Fill covariance matrices
     for ( int i = 0; i < 3; ++i ) {
         odom_msg.pose.covariance[i * 6 + i] = P_(i, i);
         odom_msg.twist.covariance[i * 6 + i] = P_(i + 3, i + 3);
