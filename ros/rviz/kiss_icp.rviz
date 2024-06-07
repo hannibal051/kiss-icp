@@ -5,7 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /point_clouds1/global_map1
+        - /point_clouds1/local_map1/Status1
         - /odometry1
         - /odometry1/odometry1/Shape1
         - /odometry1/imu_incremental1/Shape1
@@ -30,7 +30,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: local_map
 Visualization Manager:
   Class: ""
   Displays:
@@ -116,7 +116,7 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: Intensity
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 4096
@@ -137,12 +137,12 @@ Visualization Manager:
             Value: /kiss/global_map
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 40.58415603637695
-            Min Value: -49.72420883178711
+            Max Value: 16.321598052978516
+            Min Value: -7.167723178863525
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -193,13 +193,13 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: true
-          Enabled: true
+          Enabled: false
           Keep: 0
           Name: odometry
           Position Tolerance: 0.10000000149011612
           Shape:
             Alpha: 1
-            Axes Length: 1
+            Axes Length: 30
             Axes Radius: 0.5
             Color: 255; 25; 0
             Head Length: 0.30000001192092896
@@ -214,7 +214,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Best Effort
             Value: /kiss/odometry
-          Value: true
+          Value: false
         - Angle Tolerance: 0.10000000149011612
           Class: rviz_default_plugins/Odometry
           Covariance:
@@ -271,7 +271,7 @@ Visualization Manager:
               Scale: 1
               Value: true
             Value: false
-          Enabled: true
+          Enabled: false
           Keep: 0
           Name: ekf-earth
           Position Tolerance: 0.10000000149011612
@@ -292,7 +292,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /vehicle_6/local_odometry
-          Value: true
+          Value: false
         - Angle Tolerance: 0.10000000149011612
           Class: rviz_default_plugins/Odometry
           Covariance:
@@ -335,12 +335,12 @@ Visualization Manager:
       Enabled: true
       Name: odometry
     - Class: rviz_default_plugins/Axes
-      Enabled: true
+      Enabled: false
       Length: 150
       Name: odom_frame
       Radius: 5
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -387,16 +387,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 1962.3870849609375
+      Distance: 1966.5013427734375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -205.1066436767578
-        Y: -167.64193725585938
-        Z: -381.7818298339844
+        X: -4.09395694732666
+        Y: 142.1774139404297
+        Z: -372.5741271972656
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -405,7 +405,7 @@ Visualization Manager:
       Pitch: 1.5697963237762451
       Target Frame: luminar_front
       Value: Orbit (rviz_default_plugins)
-      Yaw: 1.8253824710845947
+      Yaw: 3.1403825283050537
     Saved: ~
 Window Geometry:
   Displays:

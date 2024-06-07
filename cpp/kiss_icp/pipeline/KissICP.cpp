@@ -64,8 +64,8 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
     // Compute initial_guess for ICP
     const auto prediction = GetPredictionModel();
     const auto last_pose = !poses_.empty() ? poses_.back() : Sophus::SE3d();
-    // const auto initial_guess = gpsRefered ? gps_guess : (last_pose * prediction);
-    const auto initial_guess = (last_pose * prediction);
+    const auto initial_guess = gpsRefered ? gps_guess : (last_pose * prediction);
+    // const auto initial_guess = (last_pose * prediction);
 
     // Run icp
     Sophus::SE3d new_pose = registration_.AlignPointsToMap(source,         //
@@ -76,8 +76,10 @@ KissICP::Vector3dVectorTuple KissICP::RegisterFrame(const std::vector<Eigen::Vec
 
     if ( gpsRefered ) {
         double trans_dist = (new_pose.translation() - gps_guess.translation()).norm();
-        if ( trans_dist > 0.02 ) {
-            // std::cout << "trans_dist  " << trans_dist << std::endl;
+        double rotate_dist = (new_pose.so3().inverse() * gps_guess.so3()).log().norm();
+        
+        if ( trans_dist > 0.02 || rotate_dist > 0.01 ) {
+            // std::cout << "trans_dist  " << trans_dist << "  " << rotate_dist << std::endl;
             // std::cout << "RTK fix: " << initial_guess.translation().transpose() << " -> " << gps_guess.translation().transpose() << std::endl;
             new_pose.translation().x() = gps_guess.translation().x();
             new_pose.translation().y() = gps_guess.translation().y();

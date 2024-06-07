@@ -45,6 +45,12 @@ void ESKFNode::insOdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     );
 
     // Add a function to check if INS is healthy
+    for ( int i = 0; i < 36; i += 7 ) {
+        if ( msg->pose.covariance[i] > 0.2 ) {
+            return;
+        }
+    }
+    std::cout << std::endl;
 
     msg_time_ = msg->header.stamp;
 
@@ -228,7 +234,7 @@ void ESKFNode::publishOdometry() {
     // Eigen::Vector3d smoothed_velocity = sg_smoother_.smooth(odometry_velocities_); 
 
     last_imu_time_ = kiss_icp_ros::utils::stamp2Sec(msg_time_);
-    
+
     auto odom_msg = nav_msgs::msg::Odometry();
     odom_msg.header.stamp = msg_time_;
     odom_msg.header.frame_id = odom_frame_;

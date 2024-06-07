@@ -133,10 +133,10 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     const auto cloud_frame_id = msg->header.frame_id;
     const auto points = PointCloud2ToEigen(msg);
     const auto timestamps = GetTimestamps(msg);
-    const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
+    const auto egocentric_estimation = true;//(base_frame_.empty() || base_frame_ == cloud_frame_id);
 
     // Find reference odometry from GPS data
-    timeLaserInfoCur = stamp2Sec(msg->header.stamp); //stamp2Sec(this->get_clock()->now());
+    timeLaserInfoCur = stamp2Sec(msg->header.stamp);
     Sophus::SE3d test;  bool gpsRefered = ReferGPS(test);
 
     // Register frame, main entry point to KISS-ICP pipeline
@@ -214,7 +214,7 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
     }
 
     // If transmitting to tf tree we know where the clouds are exactly
-    const auto cloud2odom = Sophus::SE3d(); //LookupTransform(odom_frame_, cloud_frame_id);
+    const auto cloud2odom = LookupTransform(odom_frame_, cloud_frame_id);
     frame_publisher_->publish(std::move(EigenToPointCloud2(frame, cloud2odom, odom_header)));
     kpoints_publisher_->publish(std::move(EigenToPointCloud2(keypoints, cloud2odom, odom_header)));
 
@@ -232,11 +232,69 @@ void OdometryServer::PublishClouds(const std::vector<Eigen::Vector3d> frame,
 }
 
 void OdometryServer::GPSHandler(const nav_msgs::msg::Odometry::ConstSharedPtr &msg) {
-    double cov = std::max(msg->pose.covariance[0], msg->pose.covariance[5]);
+    static bool init_rtk = false;
+    static Sophus::SE2d origin;
 
-    if ( cov <= 0.5 )  // 0.02
+    if (!init_rtk)
     {
-        gpsQueue.push_back(*msg);
+        double cov = std::max(msg->pose.covariance[0], msg->pose.covariance[5]);
+
+        double map_yaw = quaternionToEulerAngles(msg->pose.pose.orientation.w,
+                                                 msg->pose.pose.orientation.x,
+                                                 msg->pose.pose.orientation.y,
+                                                 msg->pose.pose.orientation.z);
+        double map_x = msg->pose.pose.position.x;
+        double map_y = msg->pose.pose.position.y;
+        
+        // Create a rotation matrix from yaw
+        // Sophus::SO2d R(Eigen::Rotation2Dd(map_yaw + 0.5 * M_PI).angle());
+        Sophus::SO2d R(Eigen::Rotation2Dd(map_yaw).angle());
+        // Create a translation vector
+        Eigen::Vector2d t(map_x, map_y);
+
+        // Create the Sophus SE2 group element
+        Sophus::SE2d cur(R, t);
+        origin = cur.inverse();
+        
+        // if ( cov <= 0.02 )
+        {
+            init_rtk = true;
+        }
+        
+        return;
+    }
+    else
+    {  
+        double cov = std::max(msg->pose.covariance[0], msg->pose.covariance[5]);
+
+        double yaw = quaternionToEulerAngles(msg->pose.pose.orientation.w,
+                                             msg->pose.pose.orientation.x,
+                                             msg->pose.pose.orientation.y,
+                                             msg->pose.pose.orientation.z);
+
+        // Create the recent SE2
+        Sophus::SO2d R(Eigen::Rotation2Dd(yaw).angle());
+        Eigen::Vector2d t(msg->pose.pose.position.x, msg->pose.pose.position.y);
+        Sophus::SE2d curSE2(R, t);
+        // get the final result
+        Sophus::SE2d identity = origin * curSE2;
+        // Extract the translation and rotation from the identity transformation
+        Eigen::Vector2d trans = identity.translation();
+        double final_yaw = identity.so2().log();
+        
+        if ( cov <= 0.5 )  // 0.02
+        {
+            nav_msgs::msg::Odometry pose_msg;
+            pose_msg.pose.covariance[0] = cov;
+            pose_msg.pose.covariance[7] = cov;
+            pose_msg.pose.covariance[14] = cov;
+            pose_msg.pose.pose.position.x = trans(0);
+            pose_msg.pose.pose.position.y = trans(1);
+            pose_msg.pose.pose.position.z = final_yaw;
+            pose_msg.header.stamp = msg->header.stamp;
+
+            gpsQueue.push_back(pose_msg);
+        }
     }
 }
 

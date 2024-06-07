@@ -55,18 +55,19 @@ def generate_launch_description():
     return LaunchDescription(
         [
             # ROS 2 parameters
-            DeclareLaunchArgument("pc_topic", default_value="/ouster/points"),
+            DeclareLaunchArgument("pc_topic", default_value="/vehicle_6/luminar_id0_cloud"),
             DeclareLaunchArgument("gps_topic", default_value="/eskf/odom"),
             DeclareLaunchArgument("bagfile", default_value=""),
-            DeclareLaunchArgument("visualize", default_value="true"),
+            DeclareLaunchArgument("visualize", default_value="false"),
             DeclareLaunchArgument("odom_frame", default_value="map"),
-            DeclareLaunchArgument("base_frame", default_value="base_link"),
+            DeclareLaunchArgument("base_frame", default_value="luminar"),
             DeclareLaunchArgument("publish_odom_tf", default_value="true"),
             # KISS-ICP parameters
             DeclareLaunchArgument("deskew", default_value="true"),
             DeclareLaunchArgument("max_range", default_value="100.0"),
             DeclareLaunchArgument("min_range", default_value="1.0"),
             # GNSS re-relocalization parameters
+            DeclareLaunchArgument("echo_gps", default_value="true"),
             DeclareLaunchArgument("origin_set", default_value="false"),
             DeclareLaunchArgument("origin_lat", default_value="0.0"),
             DeclareLaunchArgument("origin_lon", default_value="0.0"),
@@ -89,6 +90,7 @@ def generate_launch_description():
                         "max_range": LaunchConfiguration("max_range"),
                         "min_range": LaunchConfiguration("min_range"),
                         "deskew": LaunchConfiguration("deskew"),
+                        "echo_gps": LaunchConfiguration("echo_gps"),
                         #  "voxel_size": LaunchConfiguration("voxel_size"),
                         "max_points_per_voxel": 20,
                         "initial_threshold": 2.0,
