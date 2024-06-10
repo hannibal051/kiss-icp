@@ -43,15 +43,26 @@ public:
         base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
         odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
 
+        std::string imu_topic_;
+        imu_topic_ = declare_parameter<std::string>("imuTopic", imu_topic_);
+        std::string gps_top_topic_;
+        gps_top_topic_ = declare_parameter<std::string>("antennaTopTopic", gps_top_topic_);
+        std::string gps_tbm_topic_;
+        gps_tbm_topic_ = declare_parameter<std::string>("antennaBtmTopic", gps_tbm_topic_);
+        std::string ins_topic_;
+        ins_topic_ = declare_parameter<std::string>("insTopic", ins_topic_);
+        std::string eskf_topic_;
+        eskf_topic_ = declare_parameter<std::string>("eskfTopic", eskf_topic_);
+
         imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            "/imu/data", 800, std::bind(&ESKFNode::imuCallback, this, std::placeholders::_1));
-        gps_front_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
-            "/gps/front/fix", 10, std::bind(&ESKFNode::gpsFrontCallback, this, std::placeholders::_1));
-        gps_rear_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
-            "/gps/rear/fix", 10, std::bind(&ESKFNode::gpsRearCallback, this, std::placeholders::_1));
+            imu_topic_, 800, std::bind(&ESKFNode::imuCallback, this, std::placeholders::_1));
+        gps_top_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
+            gps_top_topic_, 10, std::bind(&ESKFNode::gpsTopCallback, this, std::placeholders::_1));
+        gps_btm_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
+            gps_tbm_topic_, 10, std::bind(&ESKFNode::gpsBtmCallback, this, std::placeholders::_1));
         ins_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/ins/odometry", 10, std::bind(&ESKFNode::insOdomCallback, this, std::placeholders::_1));
-        odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>("/eskf/odom", 1);
+            ins_topic_, 10, std::bind(&ESKFNode::insOdomCallback, this, std::placeholders::_1));
+        odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(eskf_topic_, 1);
 
         // Initial nominal state
         nominal_state_.position = Vector3d(0, 0, 0);
@@ -98,8 +109,8 @@ public:
 private:
     void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg);
     void insOdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg);
-    void gpsFrontCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg);
-    void gpsRearCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg);
+    void gpsTopCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg);
+    void gpsBtmCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg);
 
     bool healthyGps(std::vector<Vector3d> & msg_buff, const sensor_msgs::msg::NavSatFix::SharedPtr msg);
 
@@ -119,8 +130,8 @@ private:
 
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr ins_odom_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_front_sub_;
-    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_rear_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_top_sub_;
+    rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_btm_sub_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 
     State nominal_state_;

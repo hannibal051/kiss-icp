@@ -99,7 +99,7 @@ void ESKFNode::insOdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     publishOdometry();
 }
 
-void ESKFNode::gpsFrontCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
+void ESKFNode::gpsTopCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
     // Convert GPS data to ENU coordinates (this assumes you have a function for this conversion)
     Vector3d gps_position = gpsToENU(msg->latitude, msg->longitude, msg->altitude);
     if ( !gps_initialized_ ) {
@@ -164,7 +164,7 @@ void ESKFNode::gpsFrontCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg
 }
 
 
-void ESKFNode::gpsRearCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
+void ESKFNode::gpsBtmCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
     // Convert GPS data to ENU coordinates (this assumes you have a function for this conversion)
     Vector3d gps_position = gpsToENU(msg->latitude, msg->longitude, msg->altitude);
     if ( !gps_initialized_ ) {

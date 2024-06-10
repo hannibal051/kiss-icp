@@ -1,0 +1,46 @@
+/**:
+  ros__parameters:
+
+    # Topics
+    odomTopic: "/kiss/odometry/imu_incremental"                    # IMU pre-preintegration odometry, same frequency as IMU
+
+    # Frames
+    baselinkFrame: "base_link"
+    odometryFrame: "odom"
+    mapFrame: "map"
+
+    # GPS Settings
+    useImuHeadingInitialization: true           # if using GPS data, set to "true"
+    antennaTopTopic: "/vehicle_6/novatel_top_id0_gps"                    # GPS odometry topic from navsat, see module_navsat.launch file
+    antennaBtmTopic: "/vehicle_6/novatel_btm_id0_gps"
+    insTopic: "/vehicle_6/local_odometry"
+    eskfTopic: "/eskf/odometry"
+    useGpsElevation: false                       # if GPS elevation is bad or problem is 2D, set to "false"
+    gpsCovThreshold: 0.05                         # threshold for using GPS data
+    ## GPS Relocalization Settings
+    originSet: false
+    originLat: 0.0
+    originLon: 0.0
+    originAlt: 0.0
+    originYaw: 0.0
+
+    # LiDAR Settings
+    useLidar: true
+    pointCloudTopic: "/vehicle_6/luminar_id0_cloud"
+    sensor: luminar                               # lidar sensor type, either 'velodyne', 'ouster', 'livox', or 'luminar'
+    downsampleRate: 1                            # default: 1. Downsample your data if too many
+    lidarMinRange: 1.0                           # default: 1.0, minimum lidar range to be used
+    lidarMaxRange: 100.0                        # default: 1000.0, maximum lidar range to be used
+    deskew: true                                # curcial for high speed. if no IMU, contant motion estimation; if IMU, intertial velocity
+    max_points_per_voxel: 20
+    initial_threshold: 2.0
+    min_motion_th: 0.1
+
+    # IMU Settings
+    useIMU: true
+    imuTopic: "/vehicle_6/novatel_top_id0_imu"
+    imuAccNoise: 3.9939570888238808e-03
+    imuGyrNoise: 1.5636343949698187e-03
+    imuAccBiasN: 6.4356659353532566e-05
+    imuGyrBiasN: 3.5640318696367613e-05
+    imuGravity: 9.80002

@@ -23,6 +23,7 @@
 
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
 from launch_ros.substitutions import FindPackageShare
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -38,52 +39,47 @@ import os
 
 def generate_launch_description():
     current_pkg = FindPackageShare("kiss_icp")
+    share_dir = get_package_share_directory('kiss_icp')
+
+    parameter_file = os.path.join(
+            share_dir, 'config', 'params.yaml')
 
     return LaunchDescription(
         [
-            # ROS 2 parameters
-            DeclareLaunchArgument("pc_topic", default_value="/ouster/points"),
-            DeclareLaunchArgument("gps_topic", default_value="/ekf/odometry_earth/none"),
-            DeclareLaunchArgument("bagfile", default_value=""),
-            DeclareLaunchArgument("visualize", default_value="true"),
-            DeclareLaunchArgument("odom_frame", default_value="odom"),
-            DeclareLaunchArgument("base_frame", default_value=""),
-            DeclareLaunchArgument("publish_odom_tf", default_value="true"),
-            # KISS-ICP parameters
-            DeclareLaunchArgument("deskew", default_value="true"),
-            DeclareLaunchArgument("max_range", default_value="100.0"),
-            DeclareLaunchArgument("min_range", default_value="1.0"),
-
             Node(
                 package="kiss_icp",
                 executable="odometry_node",
                 name="odometry_node",
                 output="screen",
-                remappings=[("pointcloud_topic", LaunchConfiguration("pc_topic")),
-                            ("gps_filter_topic", LaunchConfiguration("gps_topic"))],
-                parameters=[
-                    {
-                        "odom_frame": LaunchConfiguration("odom_frame"),
-                        "base_frame": LaunchConfiguration("base_frame"),
-                        "max_range": LaunchConfiguration("max_range"),
-                        "min_range": LaunchConfiguration("min_range"),
-                        "deskew": LaunchConfiguration("deskew"),
-                        #  "voxel_size": LaunchConfiguration("voxel_size"),
-                        "max_points_per_voxel": 20,
-                        "initial_threshold": 2.0,
-                        "min_motion_th": 0.1,
-                        "publish_odom_tf": LaunchConfiguration("publish_odom_tf"),
-                        "visualize": LaunchConfiguration("visualize"),
-                    }
-                ],
+                parameters=[parameter_file],
             ),
-
             Node(
-            package="tf2_ros",
-            executable="static_transform_publisher",
-            output="screen" ,
-            arguments=["0", "0", "0", "0", "0", "0", "odom", "world"]
-        ),
-
+                package="kiss_icp",
+                executable="lio_node",
+                name="lio_node",
+                output="screen",
+                parameters=[parameter_file],
+            ),
+            Node(
+                package="kiss_icp",
+                executable="ins_node",
+                name="ins_node",
+                output="screen",
+                parameters=[parameter_file],
+            ),
+            #Node(
+            #    package="rviz2",
+            #    executable="rviz2",
+            #    output={"both": "log"},
+            #    arguments=["-d", PathJoinSubstitution([current_pkg, "rviz", "kiss_icp.rviz"])],
+            #    condition=IfCondition(LaunchConfiguration("visualize")),
+            #),
+            # ExecuteProcess(
+            #     cmd=["ros2", "bag", "play", LaunchConfiguration("bagfile")],
+            #     output="screen",
+            #     condition=IfCondition(
+            #         PythonExpression(["'", LaunchConfiguration("bagfile"), "' != ''"])
+            #     ),
+            # ),
         ]
     )

@@ -65,8 +65,8 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     echo_gps = declare_parameter<bool>("echo_gps", echo_gps);
 
     kiss_icp::pipeline::KISSConfig config;
-    config.max_range = declare_parameter<double>("max_range", config.max_range);
-    config.min_range = declare_parameter<double>("min_range", config.min_range);
+    config.max_range = declare_parameter<double>("lidarMaxRange", config.max_range);
+    config.min_range = declare_parameter<double>("lidarMinRange", config.min_range);
     config.deskew = declare_parameter<bool>("deskew", config.deskew);
     config.voxel_size = declare_parameter<double>("voxel_size", config.max_range / 100.0);
     config.max_points_per_voxel =
@@ -80,21 +80,26 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
         config.min_range = 0.0;
     }
 
+    std::string pointcloud_topic;
+    pointcloud_topic = declare_parameter<std::string>("pointCloudTopic", pointcloud_topic);
+    std::string gps_filter_topic;
+    gps_filter_topic = declare_parameter<std::string>("eskfTopic", gps_filter_topic);
+
     // Construct the main KISS-ICP odometry node
     kiss_icp_ = std::make_unique<kiss_icp::pipeline::KissICP>(config);
 
     // Initialize subscribers
     pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
-        "pointcloud_topic", rclcpp::SensorDataQoS(),
+        pointcloud_topic, rclcpp::SensorDataQoS(),
         std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
     gps_filter_sub_ = create_subscription<nav_msgs::msg::Odometry>(
-        "gps_filter_topic", rclcpp::SensorDataQoS(),
+        gps_filter_topic, rclcpp::SensorDataQoS(),
         std::bind(&OdometryServer::GPSHandler, this, std::placeholders::_1));
 
     // Initialize publishers
     rclcpp::QoS qos((rclcpp::SystemDefaultsQoS().keep_last(1).durability_volatile()));
     odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/kiss/odometry", qos);
-    odom_gnss_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/gnss/odometry", qos);
+    
     if (publish_debug_clouds_) {
         frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/frame", qos);
         kpoints_publisher_ =

@@ -47,6 +47,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(GTSAM REQUIRED)
 
 # ROS 2 node -- KISS
 add_library(odometry_component SHARED src/OdometryServer.cpp)
@@ -78,14 +79,30 @@ ament_target_dependencies(
   geometry_msgs
   tf2_ros)
 
-# Register LIO Node
+# ROS 2 node -- LIO
+add_library(lio_component SHARED src/imuPreintegration.cpp)
+target_compile_features(lio_component PUBLIC cxx_std_20)
+target_include_directories(lio_component PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(lio_component kiss_icp::pipeline gtsam)
+ament_target_dependencies(
+  lio_component
+  rcutils
+  rclcpp
+  rclcpp_components
+  nav_msgs
+  sensor_msgs
+  geometry_msgs
+  tf2_ros
+  GTSAM)
+
+# Register LO Node
 rclcpp_components_register_node(odometry_component PLUGIN "kiss_icp_ros::OdometryServer" EXECUTABLE odometry_node)
 # Register INS Node
 rclcpp_components_register_node(eskf_component PLUGIN "gps_imu_eskf::ESKFNode" EXECUTABLE ins_node)
+# Register LIO Node
+rclcpp_components_register_node(lio_component PLUGIN "IMUPreintegration" EXECUTABLE lio_node)
 
-
-install(TARGETS odometry_component LIBRARY DESTINATION lib RUNTIME DESTINATION lib/${PROJECT_NAME})
-install(TARGETS eskf_component LIBRARY DESTINATION lib RUNTIME DESTINATION lib/${PROJECT_NAME})
-install(DIRECTORY launch rviz DESTINATION share/${PROJECT_NAME}/)
+install(TARGETS odometry_component eskf_component lio_component LIBRARY DESTINATION lib RUNTIME DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY launch rviz config DESTINATION share/${PROJECT_NAME})
 
 ament_package()
