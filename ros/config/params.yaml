@@ -10,13 +10,15 @@
     mapFrame: "map"
 
     # GPS Settings
-    useImuHeadingInitialization: true           # if using GPS data, set to "true"
-    antennaTopTopic: "/vehicle_6/novatel_top_id0_gps"                    # GPS odometry topic from navsat, see module_navsat.launch file
+    ###########################################################################
+    useImuHeadingInitialization: true        # if using GPS data, set to "true"
+    ###########################################################################
+    antennaTopTopic: "/vehicle_6/novatel_top_id0_gps"
     antennaBtmTopic: "/vehicle_6/novatel_btm_id0_gps"
     insTopic: "/vehicle_6/local_odometry"
     eskfTopic: "/eskf/odometry"
-    useGpsElevation: false                       # if GPS elevation is bad or problem is 2D, set to "false"
-    gpsCovThreshold: 0.05                         # threshold for using GPS data
+    useGpsElevation: false                      # if GPS elevation is bad or problem is 2D, set to "false"
+    gpsCovThreshold: 0.05                       # threshold for using GPS data
     ## GPS Relocalization Settings
     originSet: false
     originLat: 0.0
@@ -25,11 +27,13 @@
     originYaw: 0.0
 
     # LiDAR Settings
-    useLidar: true
+    ###########################################################################
+    useLidar: true                         # if using LiDAR data, set to "true"
+    ###########################################################################
     pointCloudTopic: "/vehicle_6/luminar_id0_cloud"
-    sensor: luminar                               # lidar sensor type, either 'velodyne', 'ouster', 'livox', or 'luminar'
-    downsampleRate: 1                            # default: 1. Downsample your data if too many
-    lidarMinRange: 1.0                           # default: 1.0, minimum lidar range to be used
+    sensor: luminar                             # lidar sensor type, either 'velodyne', 'ouster', 'livox', or 'luminar'
+    downsampleRate: 1                           # default: 1. Downsample your data if too many
+    lidarMinRange: 1.0                          # default: 1.0, minimum lidar range to be used
     lidarMaxRange: 100.0                        # default: 1000.0, maximum lidar range to be used
     deskew: true                                # curcial for high speed. if no IMU, contant motion estimation; if IMU, intertial velocity
     max_points_per_voxel: 20
@@ -37,7 +41,9 @@
     min_motion_th: 0.1
 
     # IMU Settings
-    useIMU: true
+    ###########################################################################
+    useIMU: true                             # if using IMU data, set to "true"
+    ###########################################################################
     imuTopic: "/vehicle_6/novatel_top_id0_imu"
     imuAccNoise: 3.9939570888238808e-03
     imuGyrNoise: 1.5636343949698187e-03

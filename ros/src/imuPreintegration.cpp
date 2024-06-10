@@ -96,6 +96,12 @@ public:
     gtsam::Pose3 lidar2Imu = gtsam::Pose3(gtsam::Rot3(1, 0, 0, 0), gtsam::Point3(0.0, 0.0, 0.0));
 
     IMUPreintegration(const rclcpp::NodeOptions & options) : Node("imuPreintegration_node", options) {
+        bool use_imu_;
+        use_imu_ = declare_parameter<bool>("useIMU", use_imu_);
+        if ( !use_imu_ ) {
+            return;
+        }
+
         callbackGroupImu = create_callback_group(
             rclcpp::CallbackGroupType::MutuallyExclusive);
         callbackGroupOdom = create_callback_group(

@@ -5,6 +5,9 @@
 You should not need any extra dependency, just clone and build:
 
 ```sh
+sudo add-apt-repository ppa:borglab/gtsam-release-4.1
+sudo apt install libgtsam-dev libgtsam-unstable-dev
+
 git clone https://github.com/PRBonn/kiss-icp
 colcon build
 source install/setup.bash
@@ -15,17 +18,5 @@ source install/setup.bash
 ##### LIO(ICP, IMU-Preintegration, iSAM) + INS(ESKF)
 
 ```sh
-ros2 launch kiss_icp odometry_lio_ins.launch.py
-```
-
-##### LIO
-
-```sh
-ros2 launch kiss_icp odometry_lio.launch.py
-```
-
-##### LO(ICP)
-
-```sh
-ros2 launch kiss_icp odometry_lo.launch.py
+ros2 launch kiss_icp odometry.launch.py
 ```

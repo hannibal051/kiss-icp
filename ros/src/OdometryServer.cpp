@@ -56,13 +56,19 @@ using utils::quaternionToEulerAngles;
 
 OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     : rclcpp::Node("odometry_node", options) {
+    bool use_lidar_;
+    use_lidar_ = declare_parameter<bool>("useLidar", use_lidar_);
+    if ( !use_lidar_ ) {
+        return;
+    }
+    
     base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
     odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
     publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
     publish_debug_clouds_ = declare_parameter<bool>("visualize", publish_debug_clouds_);
 
     // These params are setup for re-localization
-    echo_gps = declare_parameter<bool>("echo_gps", echo_gps);
+    echo_gps = declare_parameter<bool>("useImuHeadingInitialization", echo_gps);
 
     kiss_icp::pipeline::KISSConfig config;
     config.max_range = declare_parameter<double>("lidarMaxRange", config.max_range);
@@ -92,14 +98,16 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     pointcloud_sub_ = create_subscription<sensor_msgs::msg::PointCloud2>(
         pointcloud_topic, rclcpp::SensorDataQoS(),
         std::bind(&OdometryServer::RegisterFrame, this, std::placeholders::_1));
-    gps_filter_sub_ = create_subscription<nav_msgs::msg::Odometry>(
-        gps_filter_topic, rclcpp::SensorDataQoS(),
-        std::bind(&OdometryServer::GPSHandler, this, std::placeholders::_1));
+    if ( echo_gps ) {
+        gps_filter_sub_ = create_subscription<nav_msgs::msg::Odometry>(
+            gps_filter_topic, rclcpp::SensorDataQoS(),
+            std::bind(&OdometryServer::GPSHandler, this, std::placeholders::_1));
+    }
 
     // Initialize publishers
     rclcpp::QoS qos((rclcpp::SystemDefaultsQoS().keep_last(1).durability_volatile()));
     odom_publisher_ = create_publisher<nav_msgs::msg::Odometry>("/kiss/odometry", qos);
-    
+
     if (publish_debug_clouds_) {
         frame_publisher_ = create_publisher<sensor_msgs::msg::PointCloud2>("/kiss/frame", qos);
         kpoints_publisher_ =
@@ -303,14 +311,7 @@ void OdometryServer::GPSHandler(const nav_msgs::msg::Odometry::ConstSharedPtr &m
     }
 }
 
-bool OdometryServer::ReferGPS(Sophus::SE3d &test) {
-    if ( !echo_gps ) {
-        if ( !gpsQueue.empty() ) {
-            gpsQueue.clear();
-        }
-        return false;
-    }
-    
+bool OdometryServer::ReferGPS(Sophus::SE3d &test) {    
     while ( !gpsQueue.empty() ) {
         double curGPSt = stamp2Sec(gpsQueue.front().header.stamp);
 

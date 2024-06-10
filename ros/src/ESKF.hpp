@@ -54,14 +54,23 @@ public:
         std::string eskf_topic_;
         eskf_topic_ = declare_parameter<std::string>("eskfTopic", eskf_topic_);
 
-        imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
-            imu_topic_, 800, std::bind(&ESKFNode::imuCallback, this, std::placeholders::_1));
-        gps_top_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
-            gps_top_topic_, 10, std::bind(&ESKFNode::gpsTopCallback, this, std::placeholders::_1));
-        gps_btm_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
-            gps_tbm_topic_, 10, std::bind(&ESKFNode::gpsBtmCallback, this, std::placeholders::_1));
-        ins_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            ins_topic_, 10, std::bind(&ESKFNode::insOdomCallback, this, std::placeholders::_1));
+        bool use_imu_;
+        use_imu_ = declare_parameter<bool>("useIMU", use_imu_);
+        if ( use_imu_ ) {
+            imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+                imu_topic_, 800, std::bind(&ESKFNode::imuCallback, this, std::placeholders::_1));
+        }
+        
+        bool use_gps_;
+        use_gps_ = declare_parameter<bool>("useImuHeadingInitialization", use_gps_);
+        if ( use_gps_ ) {
+            gps_top_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
+                gps_top_topic_, 10, std::bind(&ESKFNode::gpsTopCallback, this, std::placeholders::_1));
+            gps_btm_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
+                gps_tbm_topic_, 10, std::bind(&ESKFNode::gpsBtmCallback, this, std::placeholders::_1));
+            ins_odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+                ins_topic_, 10, std::bind(&ESKFNode::insOdomCallback, this, std::placeholders::_1));
+        }
         odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(eskf_topic_, 1);
 
         // Initial nominal state
