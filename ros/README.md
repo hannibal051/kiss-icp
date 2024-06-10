@@ -8,7 +8,7 @@ You should not need any extra dependency, just clone and build:
 sudo add-apt-repository ppa:borglab/gtsam-release-4.1
 sudo apt install libgtsam-dev libgtsam-unstable-dev
 
-git clone https://github.com/PRBonn/kiss-icp
+git clone git@gitlab.com:iu-vail/iu-racing/ai-driver/vehicle-autonomy-stack.git
 colcon build
 source install/setup.bash
 ```
@@ -20,3 +20,7 @@ source install/setup.bash
 ```sh
 ros2 launch kiss_icp odometry.launch.py
 ```
+
+##### CONFIG
+located in ros/config/params.yaml
+I assume the config file is very eary to understand.
