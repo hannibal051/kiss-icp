@@ -1,5 +1,7 @@
 #pragma once
 
+#include "kiss_icp/pipeline/KissICP.hpp"
+
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -9,6 +11,10 @@
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+
 #include "SavitzkyGolay.hpp"
 
 using namespace Eigen;
@@ -40,8 +46,8 @@ public:
         ORGIN_POINT_LON = declare_parameter<double>("origin_lon", ORGIN_POINT_LON);
         ORGIN_POINT_ALT = declare_parameter<double>("origin_alt", ORGIN_POINT_ALT);
 
-        base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
-        odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
+        base_frame_ = declare_parameter<std::string>("baselinkFrame", base_frame_);
+        odom_frame_ = declare_parameter<std::string>("odometryFrame", odom_frame_);
 
         std::string imu_topic_;
         imu_topic_ = declare_parameter<std::string>("imuTopic", imu_topic_);
@@ -109,10 +115,13 @@ public:
         // Measurement noise covariance
         R_ = Matrix3d::Identity() * 0.01 * 0.01;
         R_yaw = MatrixXd::Identity(1, 1) * 0.01 * 0.01;
-
+        
+        tf2_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+        tf2_buffer_->setUsingDedicatedThread(true);
+        tf2_listener_ = std::make_unique<tf2_ros::TransformListener>(*tf2_buffer_);
         // Initialize transformations from GPS antennas to base_link
-        gps_front_to_base_link_ = Vector3d(+1.606, +0.05, -0.1428);
-        gps_rear_to_base_link_ = Vector3d(+1.606, -0.05, -0.1428);
+        gps_top_to_base_link_ = Vector3d(+1.606, +0.05, -0.1428);
+        gps_btm_to_base_link_ = Vector3d(+1.606, -0.05, -0.1428);
     }
 
 private:
@@ -137,11 +146,17 @@ private:
         gps_position -= transformed_vector;
     }
 
+    /// Utility function to compute transformation using tf tree
+    Sophus::SE3d LookupTransform(const std::string &target_frame, const std::string &source_frame) const;
+
     rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr ins_odom_sub_;
     rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_top_sub_;
     rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr gps_btm_sub_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
+
+    std::unique_ptr<tf2_ros::Buffer> tf2_buffer_;
+    std::unique_ptr<tf2_ros::TransformListener> tf2_listener_;
 
     State nominal_state_;
     MatrixXd P_, Q_, Qi_, R_yaw;
@@ -151,8 +166,8 @@ private:
 
     SavitzkyGolay sg_smoother_;
 
-    Vector3d gps_front_to_base_link_;
-    Vector3d gps_rear_to_base_link_;
+    Vector3d gps_top_to_base_link_;
+    Vector3d gps_btm_to_base_link_;
 
     std::vector<Vector3d> v_front_buff, v_rear_buff;
 

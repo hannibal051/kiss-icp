@@ -2,12 +2,11 @@
   ros__parameters:
 
     # Topics
-    odomTopic: "/kiss/odometry/imu_incremental"                    # IMU pre-preintegration odometry, same frequency as IMU
+    odomTopic: "/kiss/odometry/imu_incremental"  # IMU pre-preintegration odometry, same frequency as IMU
 
     # Frames
-    baselinkFrame: "base_link"
+    baselinkFrame: "center_of_gravity"
     odometryFrame: "odom"
-    mapFrame: "map"
 
     # GPS Settings
     ###########################################################################
@@ -39,6 +38,8 @@
     max_points_per_voxel: 20
     initial_threshold: 2.0
     min_motion_th: 0.1
+    publish_odom_tf: true
+    visualize: false
 
     # IMU Settings
     ###########################################################################

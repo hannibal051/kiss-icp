@@ -50,7 +50,6 @@ void ESKFNode::insOdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
             return;
         }
     }
-    std::cout << std::endl;
 
     msg_time_ = msg->header.stamp;
 
@@ -99,7 +98,32 @@ void ESKFNode::insOdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
     publishOdometry();
 }
 
+Sophus::SE3d ESKFNode::LookupTransform(const std::string &target_frame,
+                                             const std::string &source_frame) const {
+    std::string err_msg;
+    if (tf2_buffer_->_frameExists(source_frame) &&  //
+        tf2_buffer_->_frameExists(target_frame) &&  //
+        tf2_buffer_->canTransform(target_frame, source_frame, tf2::TimePointZero, &err_msg)) {
+        try {
+            auto tf = tf2_buffer_->lookupTransform(target_frame, source_frame, tf2::TimePointZero);
+            return tf2::transformToSophus(tf);
+        } catch (tf2::TransformException &ex) {
+            RCLCPP_WARN(this->get_logger(), "%s", ex.what());
+        }
+    }
+    RCLCPP_WARN(this->get_logger(), "Failed to find tf. Reason=%s", err_msg.c_str());
+    return {};
+}
+
 void ESKFNode::gpsTopCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
+    static bool base2topFound = false;
+
+    if ( !base2topFound ) {
+        gps_top_to_base_link_ = LookupTransform(base_frame_, msg->header.frame_id).translation();
+
+        base2topFound = true;
+    }
+
     // Convert GPS data to ENU coordinates (this assumes you have a function for this conversion)
     Vector3d gps_position = gpsToENU(msg->latitude, msg->longitude, msg->altitude);
     if ( !gps_initialized_ ) {
@@ -112,7 +136,7 @@ void ESKFNode::gpsTopCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) 
         return;
     }
 
-    transformGPSPositionToBaseLink(gps_position, gps_front_to_base_link_, nominal_state_.orientation);
+    transformGPSPositionToBaseLink(gps_position, gps_top_to_base_link_, nominal_state_.orientation);
 
     msg_time_ = msg->header.stamp;
 
@@ -125,7 +149,7 @@ void ESKFNode::gpsTopCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) 
     // Kalman gain
     MatrixXd H = MatrixXd::Zero(3, 15); // Measurement matrix
     H.block<3, 3>(0, 0) = Matrix3d::Identity();
-    H.block<3, 3>(0, 6) = -nominal_state_.orientation.toRotationMatrix() * skewSymmetric(gps_front_to_base_link_);
+    H.block<3, 3>(0, 6) = -nominal_state_.orientation.toRotationMatrix() * skewSymmetric(gps_top_to_base_link_);
 
     R_(0, 0) = msg->position_covariance[0];
     R_(1, 1) = msg->position_covariance[4];
@@ -165,6 +189,14 @@ void ESKFNode::gpsTopCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) 
 
 
 void ESKFNode::gpsBtmCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
+    static bool base2btmFound = false;
+
+    if ( !base2btmFound ) {
+        gps_btm_to_base_link_ = LookupTransform(base_frame_, msg->header.frame_id).translation();
+
+        base2btmFound = true;
+    }
+
     // Convert GPS data to ENU coordinates (this assumes you have a function for this conversion)
     Vector3d gps_position = gpsToENU(msg->latitude, msg->longitude, msg->altitude);
     if ( !gps_initialized_ ) {
@@ -177,7 +209,7 @@ void ESKFNode::gpsBtmCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) 
         return;
     }
 
-    transformGPSPositionToBaseLink(gps_position, gps_rear_to_base_link_, nominal_state_.orientation);
+    transformGPSPositionToBaseLink(gps_position, gps_btm_to_base_link_, nominal_state_.orientation);
 
     msg_time_ = msg->header.stamp;
 
@@ -190,7 +222,7 @@ void ESKFNode::gpsBtmCallback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) 
     // Kalman gain
     MatrixXd H = MatrixXd::Zero(3, 15); // Measurement matrix
     H.block<3, 3>(0, 0) = Matrix3d::Identity();
-    H.block<3, 3>(0, 6) = -nominal_state_.orientation.toRotationMatrix() * skewSymmetric(gps_front_to_base_link_);
+    H.block<3, 3>(0, 6) = -nominal_state_.orientation.toRotationMatrix() * skewSymmetric(gps_btm_to_base_link_);
 
     R_(0, 0) = msg->position_covariance[0];
     R_(1, 1) = msg->position_covariance[4];

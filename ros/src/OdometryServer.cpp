@@ -61,9 +61,9 @@ OdometryServer::OdometryServer(const rclcpp::NodeOptions &options)
     if ( !use_lidar_ ) {
         return;
     }
-    
-    base_frame_ = declare_parameter<std::string>("base_frame", base_frame_);
-    odom_frame_ = declare_parameter<std::string>("odom_frame", odom_frame_);
+
+    base_frame_ = declare_parameter<std::string>("baselinkFrame", base_frame_);
+    odom_frame_ = declare_parameter<std::string>("odometryFrame", odom_frame_);
     publish_odom_tf_ = declare_parameter<bool>("publish_odom_tf", publish_odom_tf_);
     publish_debug_clouds_ = declare_parameter<bool>("visualize", publish_debug_clouds_);
 
@@ -143,10 +143,13 @@ Sophus::SE3d OdometryServer::LookupTransform(const std::string &target_frame,
 }
 
 void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &msg) {
-    const auto cloud_frame_id = msg->header.frame_id;
+    static Sophus::SE3d cloud2base;
+    static bool cloud2baseFound = false;
+
+    const auto cloud_frame_id = msg->header.frame_id; //"luminar_front";
     const auto points = PointCloud2ToEigen(msg);
     const auto timestamps = GetTimestamps(msg);
-    const auto egocentric_estimation = true;//(base_frame_.empty() || base_frame_ == cloud_frame_id);
+    const auto egocentric_estimation = (base_frame_.empty() || base_frame_ == cloud_frame_id);
 
     // Find reference odometry from GPS data
     timeLaserInfoCur = stamp2Sec(msg->header.stamp);
@@ -159,11 +162,21 @@ void OdometryServer::RegisterFrame(const sensor_msgs::msg::PointCloud2::ConstSha
     const Sophus::SE3d kiss_pose = kiss_icp_->poses().back();
 
     // If necessary, transform the ego-centric pose to the specified base_link/base_footprint frame
-    const auto pose = [&]() -> Sophus::SE3d {
-        if (egocentric_estimation) return kiss_pose;
-        const Sophus::SE3d cloud2base = LookupTransform(base_frame_, cloud_frame_id);
-        return cloud2base * kiss_pose * cloud2base.inverse();
-    }();
+    if ( !cloud2baseFound ) {
+        if ( egocentric_estimation ) {}
+        else {
+            cloud2base = LookupTransform(base_frame_, cloud_frame_id);
+        }
+
+        cloud2baseFound = true;
+    }
+    Sophus::SE3d pose;
+    if ( egocentric_estimation ) {
+        pose = kiss_pose;
+    }
+    else {
+        pose = cloud2base * kiss_pose * cloud2base.inverse();
+    }
 
     // Spit the current estimated pose to ROS msgs
     PublishOdometry(pose, msg->header.stamp, cloud_frame_id);

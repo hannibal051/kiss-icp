@@ -103,6 +103,6 @@ rclcpp_components_register_node(eskf_component PLUGIN "gps_imu_eskf::ESKFNode" E
 rclcpp_components_register_node(lio_component PLUGIN "IMUPreintegration" EXECUTABLE lio_node)
 
 install(TARGETS odometry_component eskf_component lio_component LIBRARY DESTINATION lib RUNTIME DESTINATION lib/${PROJECT_NAME})
-install(DIRECTORY launch rviz config DESTINATION share/${PROJECT_NAME})
+install(DIRECTORY launch rviz config urdf DESTINATION share/${PROJECT_NAME})
 
 ament_package()

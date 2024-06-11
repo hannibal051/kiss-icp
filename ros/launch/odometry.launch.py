@@ -43,9 +43,23 @@ def generate_launch_description():
 
     parameter_file = os.path.join(
             share_dir, 'config', 'params.yaml')
+    urdf_file = os.path.join(
+            share_dir, 'urdf', 'av21.urdf')
+    with open(urdf_file, 'r') as infp:
+        robot_desc = infp.read()
 
     return LaunchDescription(
         [
+            Node(
+                package='robot_state_publisher',
+                executable='robot_state_publisher',
+                name="robot_state_publisher",
+                parameters=[{
+                    'publish_frequency': 1.0,
+                    'ignore_timestamp': False,
+                    'use_tf_static': True,
+                    'robot_description': robot_desc,}]
+            ),
             Node(
                 package="kiss_icp",
                 executable="odometry_node",
